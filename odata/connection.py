@@ -17,16 +17,6 @@ from .exceptions import ODataError, ODataConnectionError
 def catch_requests_errors(fn):
     @functools.wraps(fn)
     def inner(*args, **kwargs):
-        mtries, mdelay, backoff = 5, 1, 2
-        while mtries > 1:
-            try:
-                return fn(*args, **kwargs)
-            except requests.exceptions.Timeout as e:
-                time.sleep(mdelay)
-                mtries -= 1
-                mdelay *= backoff
-                continue
-        # final try - revert to normal logic
         try:
             return fn(*args, **kwargs)
         except requests.exceptions.RequestException as e:
