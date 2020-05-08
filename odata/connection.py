@@ -32,13 +32,17 @@ class ODataConnection(object):
         "OData-Version": "4.0",
         "User-Agent": "python-odata {0}".format(version),
     }
-    timeout = 10
+    timeout = 90
 
     def __init__(self, session=None, auth=None):
         if session is None:
             self.session = requests.Session()
             adapter = HTTPAdapter(
-                max_retries=Retry(total=5, status_forcelist=[429, 500, 502, 503, 504])
+                max_retries=Retry(
+                    total=5,
+                    status_forcelist=[429, 500, 502, 503, 504],
+                    backoff_factor=2,
+                )
             )
             self.session.mount("https://", adapter)
 
