@@ -3,6 +3,7 @@
 import json
 import functools
 import logging
+import time
 
 import requests
 import requests.exceptions
@@ -16,17 +17,20 @@ from .exceptions import ODataError, ODataConnectionError
 def catch_requests_errors(fn):
     @functools.wraps(fn)
     def inner(*args, **kwargs):
-        attempts = 0
-        while True:
+        mtries, mdelay, backoff = 5, 1, 2
+        while mtries > 1:
             try:
-                attempts += 1
                 return fn(*args, **kwargs)
             except requests.exceptions.Timeout as e:
-                if attempts >= 5:
-                    raise ODataConnectionError(str(e))
+                time.sleep(mdelay)
+                mtries -= 1
+                mdelay *= backoff
                 continue
-            except requests.exceptions.RequestException as e:
-                raise ODataConnectionError(str(e))
+        # final try - revert to normal logic
+        try:
+            return fn(*args, **kwargs)
+        except requests.exceptions.RequestException as e:
+            raise ODataConnectionError(str(e))
 
     return inner
 
@@ -112,9 +116,9 @@ class ODataConnection(object):
         headers = {}
         headers.update(self.base_headers)
 
-        self.log.info(u"GET {0}".format(url))
+        self.log.info("GET {0}".format(url))
         if params:
-            self.log.info(u"Query: {0}".format(params))
+            self.log.info("Query: {0}".format(params))
 
         response = self._do_get(url, params=params, headers=headers)
         self._handle_odata_error(response)
@@ -125,7 +129,7 @@ class ODataConnection(object):
             data = response.json()
             return data
         else:
-            msg = u"Unsupported response Content-Type: {0}".format(response_ct)
+            msg = "Unsupported response Content-Type: {0}".format(response_ct)
             raise ODataError(msg)
 
     def execute_post(self, url, data, params=None):
@@ -136,8 +140,8 @@ class ODataConnection(object):
 
         data = json.dumps(data)
 
-        self.log.info(u"POST {0}".format(url))
-        self.log.info(u"Payload: {0}".format(data))
+        self.log.info("POST {0}".format(url))
+        self.log.info("Payload: {0}".format(data))
 
         response = self._do_post(url, data=data, headers=headers, params=params)
         self._handle_odata_error(response)
@@ -156,8 +160,8 @@ class ODataConnection(object):
 
         data = json.dumps(data)
 
-        self.log.info(u"PATCH {0}".format(url))
-        self.log.info(u"Payload: {0}".format(data))
+        self.log.info("PATCH {0}".format(url))
+        self.log.info("Payload: {0}".format(data))
 
         response = self._do_patch(url, data=data, headers=headers)
         self._handle_odata_error(response)
@@ -166,7 +170,7 @@ class ODataConnection(object):
         headers = {}
         headers.update(self.base_headers)
 
-        self.log.info(u"DELETE {0}".format(url))
+        self.log.info("DELETE {0}".format(url))
 
         response = self._do_delete(url, headers=headers)
         self._handle_odata_error(response)
