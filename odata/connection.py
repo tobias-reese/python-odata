@@ -16,10 +16,17 @@ from .exceptions import ODataError, ODataConnectionError
 def catch_requests_errors(fn):
     @functools.wraps(fn)
     def inner(*args, **kwargs):
-        try:
-            return fn(*args, **kwargs)
-        except requests.exceptions.RequestException as e:
-            raise ODataConnectionError(str(e))
+        attempts = 0
+        while True:
+            try:
+                attempts += 1
+                return fn(*args, **kwargs)
+            except requests.exceptions.Timeout as e:
+                if attempts >= 5:
+                    raise ODataConnectionError(str(e))
+                continue
+            except requests.exceptions.RequestException as e:
+                raise ODataConnectionError(str(e))
 
     return inner
 
