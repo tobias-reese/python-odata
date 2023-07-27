@@ -8,7 +8,7 @@ import time
 import requests
 import requests.exceptions
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from urllib3.util import Retry
 
 from odata import version
 from .exceptions import ODataError, ODataConnectionError
@@ -26,13 +26,12 @@ def catch_requests_errors(fn):
 
 
 class ODataConnection(object):
-
     base_headers = {
         "Accept": "application/json",
         "OData-Version": "4.0",
         "User-Agent": "python-odata {0}".format(version),
     }
-    timeout = 90
+    timeout = 180
 
     def __init__(self, session=None, auth=None):
         if session is None:
