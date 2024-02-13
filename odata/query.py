@@ -237,12 +237,12 @@ class Query(object):
         return q
 
     @staticmethod
-    def and_(*values):
-        return ' and '.join(map(str, values))
+    def and_(*values: str):
+        return ' and '.join(values)
 
     @staticmethod
-    def or_(*values):
-        return ' or '.join(map(str, values))
+    def or_(*values: str):
+        return ' or '.join(values)
 
     @staticmethod
     def grouped(value):
