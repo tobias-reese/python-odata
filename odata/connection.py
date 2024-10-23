@@ -3,9 +3,12 @@
 import json
 import functools
 import logging
+import time
 
 import requests
-from requests.exceptions import RequestException
+import requests.exceptions
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 
 from odata import version
 from .exceptions import ODataError, ODataConnectionError
@@ -16,13 +19,13 @@ def catch_requests_errors(fn):
     def inner(*args, **kwargs):
         try:
             return fn(*args, **kwargs)
-        except RequestException as e:
+        except requests.exceptions.RequestException as e:
             raise ODataConnectionError(str(e))
+
     return inner
 
 
 class ODataConnection(object):
-
     base_headers = {
         'Accept': 'application/json',
         'OData-Version': '4.0',
@@ -36,10 +39,10 @@ class ODataConnection(object):
         else:
             self.session = session
         self.auth = auth
-        self.log = logging.getLogger('odata.connection')
+        self.log = logging.getLogger("odata.connection")
 
     def _apply_options(self, kwargs):
-        kwargs['timeout'] = self.timeout
+        kwargs["timeout"] = self.timeout
 
         if self.auth is not None:
             kwargs['auth'] = self.auth
